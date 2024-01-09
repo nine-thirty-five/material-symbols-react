@@ -1,0 +1,100 @@
+{
+  "name": "@nine-thirty-five/material-symbols-react",
+  "version": "1.0.0",
+  "description": "Flexible React package based on Google's Material Icons",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nine-thirty-five/material-symbols-react.git"
+  },
+  "exports": {
+    "./outlined": "./dist/esm/outlined/index.js",
+    "./outlined/filled": "./dist/esm/outlined/filled/index.js",
+    "./rounded": "./dist/esm/rounded/index.js",
+    "./rounded/filled": "./dist/esm/rounded/filled/index.js",
+    "./sharp": "./dist/esm/sharp/index.js",
+    "./sharp/filled": "./dist/esm/sharp/filled/index.js"
+  },
+  "typesVersions": {
+    "*": {
+      "outlined": [
+        "./dist/esm/outlined/index.js"
+      ],
+      "outlined/filled": [
+        "./dist/esm/outlined/filled/index.js"
+      ],
+      "rounded": [
+        "./dist/esm/rounded/index.js"
+      ],
+      "rounded/filled": [
+        "./dist/esm/rounded/filled/index.js"
+      ],
+      "sharp": [
+        "./dist/esm/sharp/index.js"
+      ],
+      "sharp/filled": [
+        "./dist/esm/sharp/filled/index.js"
+      ]
+    }
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "check": "npm run download:metadata -- --status --dry-run",
+    "update": "npm run generate && npm run build",
+    "download": "npm run download:font && npm run download:metadata",
+    "download:font": "npx --yes @material-design-icons/scripts download font --to iconfont",
+    "download:metadata": "npx --yes @material-design-icons/scripts download metadata",
+    "generate": "bun ./src/generate.ts",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "postbuild": "node ./src/generate-subpackages.util.js",
+    "lint": "eslint \"{**/*,*}.{js,ts,jsx,tsx}\"",
+    "prettier": "prettier --write \"{src,example/src}/**/*.{js,ts,jsx,tsx}\""
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "react",
+    "react-component",
+    "mui",
+    "material-ui",
+    "material design",
+    "icons"
+  ],
+  "author": "nine-thirty-five",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/nine-thirty-five/material-symbols-react/issues"
+  },
+  "homepage": "https://github.com/nine-thirty-five/material-symbols-react#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.4",
+    "@commitlint/config-conventional": "^18.4.4",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^6.17.0",
+    "@typescript-eslint/parser": "^6.17.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "parcel": "^2.10.3",
+    "prettier": "^3.1.1",
+    "puppeteer": "^21.6.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  }
+}

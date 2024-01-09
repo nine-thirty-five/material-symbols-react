@@ -1,0 +1,73 @@
+name: Auto Update
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Runs at 12:00 AM UTC every Monday
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Force Update
+        default: '0'
+      dry:
+        description: Dry Run
+        default: '0'
+      bump:
+        type: choice
+        description: Bump Version
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: git-actions/set-user@v1
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update
+        run: |
+          force="${{ github.event.inputs.force }}"
+          dry="${{ github.event.inputs.dry }}"
+          bump="${{ github.event.inputs.bump }}"
+          if [ "$bump" = "" ]; then
+            bump="patch"
+          fi
+
+          # Check for Updates
+          status=0
+          npm run check || status=$?
+          if [ $status -eq 0 ] || [ $status -eq 4 ]; then
+            if [ "$force" != "1" ]; then
+              exit 0 # exit if there are no changes or if icons are only removed
+            fi
+          fi
+          if [ $status -ge 4 ]; then
+            bump="minor" # icons are removed from metadata API
+          fi
+
+          # Bump Version
+          npm version "$bump" -m "build: auto update to v%s"
+
+          # Push
+          if [ "$dry" = "1" ]; then
+            exit 0
+          fi
+          git push --follow-tags

@@ -1,0 +1,23 @@
+{
+  "include": ["icons"],
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "esnext",
+    "lib": ["dom", "esnext"],
+    "importHelpers": false,
+    "declaration": true,
+    "sourceMap": false,
+    "rootDir": "icons",
+    "outDir": "./dist/esm",
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "moduleResolution": "node",
+    "jsx": "react",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
