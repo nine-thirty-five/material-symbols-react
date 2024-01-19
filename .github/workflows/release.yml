@@ -4,13 +4,27 @@ on:
   push:
     tags:
       - v*.*.*
+  workflow_run:
+    workflows: ['Auto Update']
+    types:
+      - completed
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Get tags
+        run: git fetch --tags origin --force
+
+      - name: Get latest tag
+        id: set_tag
+        run: |
+          latest_tag=$(git describe --tags --abbrev=0)
+          echo "::set-output name=tag::${latest_tag}"
+
       - name: Release
-        run: gh release create "${GITHUB_REF#refs/tags/}"
+        run: gh release create "${{ steps.set_tag.outputs.tag }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
