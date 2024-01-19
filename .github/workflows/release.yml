@@ -13,10 +13,9 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Get tags
-        run: git fetch --tags origin --force
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get latest tag
         id: set_tag
