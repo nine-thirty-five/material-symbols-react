@@ -45,7 +45,7 @@
     "update": "npm run generate && npm run build",
     "download": "npm run download:font && npm run download:metadata",
     "download:font": "npx --yes @material-design-icons/scripts download font --to iconfont",
-    "download:metadata": "npx --yes @material-design-icons/scripts download metadata",
+    "download:metadata": "npx @material-design-icons/scripts download metadata --symbols",
     "generate": "bun ./src/generate.ts",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",

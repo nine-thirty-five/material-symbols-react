@@ -4,10 +4,7 @@ on:
   push:
     tags:
       - v*.*.*
-  workflow_run:
-    workflows: ['Auto Update']
-    types:
-      - completed
+  workflow_dispatch:
 
 jobs:
   release:
