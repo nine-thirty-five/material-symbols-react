@@ -3,6 +3,7 @@ name: Publish
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -32,5 +33,7 @@ jobs:
         run: npm run build
 
       - name: Publish
-        run: |
-          echo "Mock Publish to npm"
+        run: npm publish --access public
+
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
