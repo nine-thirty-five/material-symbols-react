@@ -1,6 +1,6 @@
 {
   "name": "@nine-thirty-five/material-symbols-react",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Flexible React package based on Google's Material Icons",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
