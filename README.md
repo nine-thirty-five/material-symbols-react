@@ -50,12 +50,12 @@ import { Search } from '@nine-thirty-five/material-symbols-react/outlined';
 import { Home } from '@nine-thirty-five/material-symbols-react/outlined/filled';
 
 // Rounded variant
-import { Star } from '@nine-thirty-five/material-symbols-react/outlined';
-import { Favorite } from '@nine-thirty-five/material-symbols-react/outlined/filled';
+import { Star } from '@nine-thirty-five/material-symbols-react/rounded';
+import { Favorite } from '@nine-thirty-five/material-symbols-react/rounded/filled';
 
 // Sharp variant
-import { Delete } from '@nine-thirty-five/material-symbols-react/outlined';
-import { Login } from '@nine-thirty-five/material-symbols-react/outlined/filled';
+import { Delete } from '@nine-thirty-five/material-symbols-react/sharp';
+import { Login } from '@nine-thirty-five/material-symbols-react/sharp/filled';
 ```
 
 ### Component Props
