@@ -1,35 +1,26 @@
 import fs from 'fs';
 import path from 'path';
+import puppeteer, { Browser } from 'puppeteer';
 
-export function readFilesRecursively(
-  folderPath: string,
-  fileExtension: string
-): string[] {
-  const files: string[] = [];
+type Variant = 'outlined' | 'sharp' | 'rounded';
 
-  const readDir = (currentPath: string): void => {
-    const items = fs.readdirSync(currentPath);
-
-    items.forEach((item) => {
-      const fullPath = path.join(currentPath, item);
-      const stats = fs.statSync(fullPath);
-
-      if (stats.isFile() && path.extname(item) === fileExtension) {
-        files.push(fullPath);
-      }
-    });
-  };
-
-  readDir(folderPath);
-
-  return files;
-}
-
-export function capitalize(string: string) {
+function capitalize(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-export function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
+function toPascalCase(string: string) {
+  return string
+    .split('/')
+    .map((snake) =>
+      snake
+        .split('_')
+        .map((substr) => substr.charAt(0).toUpperCase() + substr.slice(1))
+        .join('')
+    )
+    .join('/');
+}
+
+function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   const result: T[][] = [];
 
   for (let i = 0; i < arr.length; i += chunkSize) {
@@ -39,7 +30,7 @@ export function chunkArray<T>(arr: T[], chunkSize: number): T[][] {
   return result;
 }
 
-export function convertNumbersToWords(input: string): string {
+function convertNumbersToWords(input: string): string {
   const numericalWords: Record<string, string> = {
     '0': 'Zero',
     '1': 'One',
@@ -114,4 +105,229 @@ export function convertNumbersToWords(input: string): string {
   return input.replace(/\d+/g, (match) =>
     convertThreeDigitNumberToWords(parseInt(match, 10))
   );
+}
+
+function extractContent(svgString: string) {
+  const pathRegex = /<path[^>]*\sd="([^"]*)"/i;
+  const match = pathRegex.exec(svgString);
+  if (match && match[1]) {
+    return match[1].trim();
+  } else {
+    console.error(
+      "No 'd' attribute found in the <path> element of the input string."
+    );
+    return null;
+  }
+}
+
+async function getIconList(
+  browser: Browser,
+  variant?: Variant
+): Promise<string[]> {
+  const page = await browser.newPage();
+
+  await page.goto(
+    variant
+      ? `https://fonts.google.com/icons?icon.style=${capitalize(variant)}`
+      : 'https://fonts.google.com/icons'
+  );
+
+  await page.waitForTimeout(1000);
+  await page.evaluate(() => {
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+  await page.waitForTimeout(1000);
+
+  const iconList = await page.evaluate(() => {
+    const spans = Array.from(document.querySelectorAll('gf-load-icon-font'));
+
+    return spans.map((span) => span.textContent?.trim() ?? '');
+  });
+
+  return iconList.filter((name) => !!name);
+}
+
+async function scraper(browser: Browser, url: string): Promise<string | null> {
+  const newPage = await browser.newPage();
+  await newPage.goto(encodeURI(url));
+
+  const content = await newPage.evaluate(() => {
+    const element = document.querySelector('svg');
+
+    if (element) {
+      return element.outerHTML;
+    }
+    return null;
+  });
+  newPage.close();
+
+  return content;
+}
+
+async function getIconsSVG(
+  browser: Browser,
+  iconNames: string[],
+  variant: Variant,
+  isFilled: boolean,
+  chunkSize: number,
+  nullIcons: string[]
+): Promise<{ name: string; content: string }[]> {
+  const iconListChunks = chunkArray(iconNames, chunkSize);
+  let svgData: { name: string; content: string }[] = [];
+  let count = 1;
+
+  for (const chunk of iconListChunks) {
+    console.log(
+      `Extracting ${variant}${isFilled ? '-filled' : ''} SVG ${
+        count * chunkSize > iconNames.length
+          ? iconNames.length
+          : count * chunkSize
+      } out of ${iconNames.length}`
+    );
+    const data = await Promise.all(
+      chunk.map(async (name) => {
+        const url = `https://fonts.gstatic.com/s/i/short-term/release/materialsymbols${variant}/${name}/${
+          isFilled ? 'fill1' : 'default'
+        }/24px.svg`;
+        console.log;
+
+        const content = await scraper(browser, url);
+
+        if (!content) nullIcons.push(url);
+
+        return {
+          name,
+          content: content ?? 'No SVG',
+        };
+      })
+    );
+
+    svgData = svgData.concat(data);
+    count++;
+  }
+
+  return svgData.filter((data) => data.content !== 'No SVG');
+}
+
+async function svgToComponent(name: string, svg: string, folder: string) {
+  const componentName = name.replace(/\s+/g, '');
+
+  return fs.promises.writeFile(
+    `./icons/${folder}/${componentName}.tsx`,
+    `
+      import React from "react";
+      import { IconProps } from "${
+        folder.includes('filled') ? '../../types' : '../types'
+      }";
+
+      const ${componentName} = (props: IconProps) => {
+        return <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 -960 960 960" fill="currentColor" {...props} >
+          <path d="${extractContent(svg)}" />
+        </svg>
+      };
+
+      export default ${componentName};
+    `
+  );
+}
+
+export async function generateIconVariant(
+  variant: Variant,
+  isFilled: boolean,
+  chunkSize: number,
+  nullIcons: string[],
+  iconList?: string[]
+) {
+  const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+
+  try {
+    if (!iconList) {
+      iconList = await getIconList(browser, variant);
+    }
+
+    const iconSVGs = await getIconsSVG(
+      browser,
+      iconList,
+      variant,
+      isFilled,
+      chunkSize,
+      nullIcons
+    );
+
+    const iconSVGChunks = chunkArray(iconSVGs, chunkSize);
+    let count = 1;
+
+    for (const chunk of iconSVGChunks) {
+      console.log(
+        `Saving ${variant}${isFilled ? '-filled' : ''} SVG ${
+          count * chunkSize > iconSVGs.length
+            ? iconSVGs.length
+            : count * chunkSize
+        } out of ${iconSVGs.length}`
+      );
+
+      await Promise.all(
+        chunk.map((svg) =>
+          svgToComponent(
+            convertNumbersToWords(toPascalCase(svg.name)),
+            svg.content,
+            `${variant}${isFilled ? '/filled' : ''}`
+          )
+        )
+      );
+
+      count++;
+    }
+  } catch (error) {
+    console.error(
+      `Failed to generate ${variant}${isFilled ? '-filled' : ''} variants`,
+      error
+    );
+  } finally {
+    await browser.close();
+  }
+}
+
+export async function generateIndexFile(
+  files: { name: string; path: string }[],
+  destinationPath: string
+) {
+  return fs.promises.writeFile(
+    destinationPath,
+    `${files
+      .map(
+        (file) =>
+          `import ${convertNumbersToWords(toPascalCase(file.name))} from '${
+            file.path
+          }';\n`
+      )
+      .join('')}\nexport {\n${files
+      .map((file) => `${convertNumbersToWords(toPascalCase(file.name))},\n`)
+      .join('')}}
+    `
+  );
+}
+
+export function readFilesRecursively(
+  folderPath: string,
+  fileExtension: string
+): string[] {
+  const files: string[] = [];
+
+  const readDir = (currentPath: string): void => {
+    const items = fs.readdirSync(currentPath);
+
+    items.forEach((item) => {
+      const fullPath = path.join(currentPath, item);
+      const stats = fs.statSync(fullPath);
+
+      if (stats.isFile() && path.extname(item) === fileExtension) {
+        files.push(fullPath);
+      }
+    });
+  };
+
+  readDir(folderPath);
+
+  return files;
 }
