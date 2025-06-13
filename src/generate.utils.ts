@@ -269,7 +269,7 @@ export async function generateIconVariant(
       await Promise.all(
         chunk.map((svg) =>
           svgToComponent(
-            convertNumbersToWords(toPascalCase(svg.name)),
+            toPascalCase(convertNumbersToWords(svg.name)),
             svg.content,
             `${variant}${isFilled ? '/filled' : ''}`
           )
@@ -297,12 +297,12 @@ export async function generateIndexFile(
     `${files
       .map(
         (file) =>
-          `import ${convertNumbersToWords(toPascalCase(file.name))} from '${
+          `import ${toPascalCase(convertNumbersToWords(file.name))} from '${
             file.path
           }';\n`
       )
       .join('')}\nexport {\n${files
-      .map((file) => `${convertNumbersToWords(toPascalCase(file.name))},\n`)
+      .map((file) => `${toPascalCase(convertNumbersToWords(file.name))},\n`)
       .join('')}}
     `
   );
