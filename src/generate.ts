@@ -3,6 +3,8 @@ import {
   generateIndexFile,
   generateIconVariant,
   readFilesRecursively,
+  filterExcludeIndexFile,
+  parseFileForIndexGeneration,
 } from './generate.utils';
 
 const nullIcons: string[] = [];
@@ -48,13 +50,10 @@ async function main() {
 
   for (const variant of variants) {
     const files = readFilesRecursively(`./icons/${variant}`, '.tsx');
+    const filesFiltered = filterExcludeIndexFile(files);
+
     await generateIndexFile(
-      files.map((path) => {
-        return {
-          path: `./${path.split('/').at(-1)?.split('.')[0] ?? ''}`,
-          name: path.split('/').at(-1)?.split('.')[0] ?? '',
-        };
-      }),
+      filesFiltered.map(parseFileForIndexGeneration),
       `./icons/${variant}/index.tsx`
     );
 
@@ -62,13 +61,10 @@ async function main() {
       `./icons/${variant}/filled`,
       '.tsx'
     );
+    const filledFiltered = filterExcludeIndexFile(filledFiles);
+
     await generateIndexFile(
-      filledFiles.map((path) => {
-        return {
-          path: `./${path.split('/').at(-1)?.split('.')[0] ?? ''}`,
-          name: path.split('/').at(-1)?.split('.')[0] ?? '',
-        };
-      }),
+      filledFiltered.map(parseFileForIndexGeneration),
       `./icons/${variant}/filled/index.tsx`
     );
   }

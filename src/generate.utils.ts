@@ -331,3 +331,27 @@ export function readFilesRecursively(
 
   return files;
 }
+
+export function filterExcludeIndexFile(files: string[]): string[] {
+  return files.filter((file) => {
+    const posix = file.replace(/\\/g, '/');
+    return path.basename(posix) !== 'index.tsx';
+  });
+}
+
+export function parseFileForIndexGeneration(file: string): {
+  name: string;
+  path: string;
+} {
+  const posix = file.replace(/\\/g, '/');
+  const name = posix.substring(
+    posix.lastIndexOf('/') + 1,
+    posix.lastIndexOf('.')
+  );
+  const relPath = `./${name}`;
+
+  return {
+    name,
+    path: relPath,
+  };
+}
