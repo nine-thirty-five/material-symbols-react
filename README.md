@@ -44,7 +44,7 @@ Icon variants are:
 
 There are two ways to import an icon based on your prefered type and variant.
 
-```ts
+```tsx
 // Outlined variant
 import { Search } from '@nine-thirty-five/material-symbols-react/outlined';
 import { Home } from '@nine-thirty-five/material-symbols-react/outlined/filled';
@@ -62,7 +62,7 @@ import { Login } from '@nine-thirty-five/material-symbols-react/sharp/filled';
 
 Icon component support all props that a React SVG component supports.
 
-```ts
+```tsx
 // Sample props
 <Search className="yourClassName" />
 <Home style={{fill: 'red'}} />
@@ -71,6 +71,22 @@ Icon component support all props that a React SVG component supports.
 <Delete fill='red' />
 <Login viewBox='0 0 24 24' />
 ```
+
+## Using icon wrapper
+
+The icon wrapper is a component that internally decides which icon variant to display using the `variant` and `filled` props.
+
+```tsx
+// Outlined variant
+import { Search, Home, Star } from '@nine-thirty-five/material-symbols-react';
+
+// Sample props
+<Search variant="outlined" className="yourClassName" />
+<Home variant="sharp" style={{fill: 'red'}} />
+<Star variant="sharp" size='1rem' filled />
+```
+
+> Note: the wrappers support the `size` prop, which sets both the height and width simultaneously.
 
 ## License
 
