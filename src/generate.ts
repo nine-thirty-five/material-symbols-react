@@ -5,7 +5,9 @@ import {
   readFilesRecursively,
   filterExcludeIndexFile,
   parseFileForIndexGeneration,
+  generateIconWrapper,
 } from './generate.utils';
+import path from 'path';
 
 const nullIcons: string[] = [];
 
@@ -41,7 +43,16 @@ async function main() {
     `
     import { SVGProps } from 'react';
 
-    export type IconProps = SVGProps<SVGSVGElement>;
+    export type Variant = 'outlined' | 'sharp' | 'rounded';
+
+    export type IconProps = SVGProps<SVGSVGElement> & {
+      size?: number | string;
+    };
+
+    export type IconWrapperProps = IconProps & {
+      variant?: Variant;
+      filled?: boolean;
+    };
     `
   );
 
@@ -68,6 +79,20 @@ async function main() {
       `./icons/${variant}/filled/index.tsx`
     );
   }
+
+  // GENERATE icons wrappers
+  const outlinedFiles = readFilesRecursively('./icons/outlined', '.tsx');
+  const outlinedFiltered = filterExcludeIndexFile(outlinedFiles);
+  const fileNames = outlinedFiltered.map((p) => path.basename(p, '.tsx'));
+
+  for (const name of fileNames) {
+    await generateIconWrapper(name, './icons');
+  }
+
+  await generateIndexFile(
+    outlinedFiltered.map(parseFileForIndexGeneration),
+    `./icons/index.tsx`
+  );
 
   // Log null icons
   console.log('Null icon urls', nullIcons);
