@@ -331,3 +331,52 @@ export function readFilesRecursively(
 
   return files;
 }
+
+export async function generateIconWrapper(name: string, outputDir: string) {
+  const pascal = toPascalCase(convertNumbersToWords(name));
+  const wrapper = `
+  import React from 'react'
+  import { IconWrapperProps } from './types'
+
+  export const ${pascal} = ({ variant = 'outlined', filled, ...props }: IconWrapperProps) => {
+    const importPath = \`./\${variant}\${filled ? "/filled" : ""}/${pascal}\`;
+
+    const LazyIcon = React.useMemo(
+      () => React.lazy(() => import(importPath)),
+      [importPath]
+    )
+
+    return (
+      <React.Suspense fallback={null}>
+        <LazyIcon {...props} />
+      </React.Suspense>
+    )
+  }
+  export default ${pascal}
+  `.trim();
+  await fs.promises.writeFile(path.join(outputDir, `${pascal}.tsx`), wrapper);
+}
+
+export function filterExcludeIndexFile(files: string[]): string[] {
+  return files.filter((file) => {
+    const posix = file.replace(/\\/g, '/');
+    return path.basename(posix) !== 'index.tsx';
+  });
+}
+
+export function parseFileForIndexGeneration(file: string): {
+  name: string;
+  path: string;
+} {
+  const posix = file.replace(/\\/g, '/');
+  const name = posix.substring(
+    posix.lastIndexOf('/') + 1,
+    posix.lastIndexOf('.')
+  );
+  const relPath = `./${name}`;
+
+  return {
+    name,
+    path: relPath,
+  };
+}
