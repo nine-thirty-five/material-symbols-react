@@ -3,7 +3,11 @@ import {
   generateIndexFile,
   generateIconVariant,
   readFilesRecursively,
+  filterExcludeIndexFile,
+  parseFileForIndexGeneration,
+  generateIconWrapper,
 } from './generate.utils';
+import path from 'path';
 
 const nullIcons: string[] = [];
 
@@ -39,7 +43,16 @@ async function main() {
     `
     import { SVGProps } from 'react';
 
-    export type IconProps = SVGProps<SVGSVGElement>;
+    export type Variant = 'outlined' | 'sharp' | 'rounded';
+
+    export type IconProps = SVGProps<SVGSVGElement> & {
+      size?: number | string;
+    };
+
+    export type IconWrapperProps = IconProps & {
+      variant?: Variant;
+      filled?: boolean;
+    };
     `
   );
 
@@ -48,13 +61,10 @@ async function main() {
 
   for (const variant of variants) {
     const files = readFilesRecursively(`./icons/${variant}`, '.tsx');
+    const filesFiltered = filterExcludeIndexFile(files);
+
     await generateIndexFile(
-      files.map((path) => {
-        return {
-          path: `./${path.split('/').at(-1)?.split('.')[0] ?? ''}`,
-          name: path.split('/').at(-1)?.split('.')[0] ?? '',
-        };
-      }),
+      filesFiltered.map(parseFileForIndexGeneration),
       `./icons/${variant}/index.tsx`
     );
 
@@ -62,16 +72,27 @@ async function main() {
       `./icons/${variant}/filled`,
       '.tsx'
     );
+    const filledFiltered = filterExcludeIndexFile(filledFiles);
+
     await generateIndexFile(
-      filledFiles.map((path) => {
-        return {
-          path: `./${path.split('/').at(-1)?.split('.')[0] ?? ''}`,
-          name: path.split('/').at(-1)?.split('.')[0] ?? '',
-        };
-      }),
+      filledFiltered.map(parseFileForIndexGeneration),
       `./icons/${variant}/filled/index.tsx`
     );
   }
+
+  // GENERATE icons wrappers
+  const outlinedFiles = readFilesRecursively('./icons/outlined', '.tsx');
+  const outlinedFiltered = filterExcludeIndexFile(outlinedFiles);
+  const fileNames = outlinedFiltered.map((p) => path.basename(p, '.tsx'));
+
+  for (const name of fileNames) {
+    await generateIconWrapper(name, './icons');
+  }
+
+  await generateIndexFile(
+    outlinedFiltered.map(parseFileForIndexGeneration),
+    `./icons/index.tsx`
+  );
 
   // Log null icons
   console.log('Null icon urls', nullIcons);
