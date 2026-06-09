@@ -22,22 +22,20 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # commit the bumped version + push the tag
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: git-actions/set-user@v1
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org/
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -47,47 +45,54 @@ jobs:
           force="${{ github.event.inputs.force }}"
           dry="${{ github.event.inputs.dry }}"
           bump="${{ github.event.inputs.bump }}"
-          if [ "$bump" = "" ]; then
-            bump="patch"
+          [ -z "$bump" ] && bump="patch"
+
+          # Snapshot the current icon set, then refresh from Google's official metadata.
+          git show HEAD:_data/icons.json > /tmp/old-icons.json 2>/dev/null || echo "[]" > /tmp/old-icons.json
+          npm run metadata
+
+          # No change to the official icon/category/tag set -> nothing to publish.
+          if git diff --quiet -- _data/icons.json && [ "$force" != "1" ]; then
+            echo "trigger_release=no" >> "$GITHUB_OUTPUT"
+            echo "No icon changes."
+            exit 0
           fi
 
-          # Check for Updates
-          status=0
-          npm run check || status=$?
-          if [ $status -eq 0 ] || [ $status -eq 4 ]; then
-            if [ "$force" != "1" ]; then
-              echo "::set-output name=trigger_release::no"
-              exit 0 # exit if there are no changes or if icons are only removed
-            fi
-          fi
-          if [ $status -ge 4 ]; then
-            bump="minor" # icons are removed from metadata API
+          # If any previously-shipped icon was removed, treat it as a minor bump
+          # (unless an explicit bump was requested via workflow_dispatch).
+          if [ -z "${{ github.event.inputs.bump }}" ]; then
+            removed=$(node -e "
+              const fs=require('fs');
+              const oldArr=JSON.parse(fs.readFileSync('/tmp/old-icons.json','utf8'));
+              const next=require('./_data/icons.json');
+              const names=new Set(next.map(i=>i.name));
+              console.log(oldArr.filter(i=>!names.has(i.name)).length);
+            ")
+            [ "$removed" -gt 0 ] && bump="minor"
           fi
 
-          # Download new metadata
-          npm run download:metadata
-          git add .
-
-          # Bump Version
+          # Stage the refreshed snapshot; `npm version` commits it with the tag.
+          git add _data/icons.json
           npm version "$bump" -m "build: auto update to v%s" --force
 
-          # Push
           if [ "$dry" = "1" ]; then
-            echo "::set-output name=trigger_release::no"
+            echo "trigger_release=no" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git push --follow-tags
-          echo "::set-output name=trigger_release::yes"
+          echo "trigger_release=yes" >> "$GITHUB_OUTPUT"
     outputs:
       trigger_release: ${{ steps.update.outputs.trigger_release }}
 
-  conditional-workflow:
+  trigger-publish:
     runs-on: ubuntu-latest
     needs: update
     if: needs.update.outputs.trigger_release == 'yes'
-
+    permissions:
+      actions: write # dispatch the Publish workflow (built-in token; no PAT)
     steps:
-      - name: Trigger Release
+      - name: Trigger Publish
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: Release
+          workflow: Publish
+          token: ${{ github.token }}
