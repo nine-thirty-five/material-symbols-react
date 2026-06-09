@@ -44,15 +44,29 @@ jobs:
 
       # OIDC trusted publishing: npm exchanges the GitHub OIDC token for a
       # short-lived credential and attaches provenance. No NPM_TOKEN needed.
+      # Idempotent: skip if this exact version is already on npm (e.g. a re-run).
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "npm already has $name@$version — skipping publish."
+          else
+            npm publish --access public --provenance
+          fi
 
-      # Create the GitHub Release with the built-in GITHUB_TOKEN (contents:write).
-      # No PAT needed — this is the last step, so it doesn't need to trigger anything.
+      # Create the GitHub Release for the version in package.json (NOT `git
+      # describe`, which can resolve to an unrelated older tag on a manual run).
+      # Ensures the matching tag exists, then creates the release. Built-in token.
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          tag=$(git describe --tags --abbrev=0)
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          if ! git rev-parse "$tag" >/dev/null 2>&1; then
+            git tag "$tag"
+            git push origin "$tag"
+          fi
           gh release view "$tag" >/dev/null 2>&1 \
             || gh release create "$tag" --generate-notes
