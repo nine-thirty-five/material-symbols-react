@@ -40,5 +40,12 @@ export default tseslint.config(
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
     },
+  },
+  {
+    // CommonJS config files (lint-staged, commitlint) and the codemod
+    // legitimately use require()/module.exports.
+    files: ['**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs' },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   }
 );
