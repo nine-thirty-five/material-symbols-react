@@ -2,3 +2,10 @@ dist
 node_modules
 package.json
 package-lock.json
+
+# Compact generated snapshot — keep it minified, don't pretty-print.
+_data/icons.json
+
+# Symlinks to AGENTS.md (prettier errors on symlinks; the target is formatted).
+CLAUDE.md
+.github/copilot-instructions.md

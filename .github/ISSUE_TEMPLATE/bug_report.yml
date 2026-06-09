@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a problem with the package
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including the import path / icon involved.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Steps, a code snippet, or a link to a minimal repro.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: e.g. 2.0.0
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: React version, bundler (Vite/Next/webpack/Parcel…), Node version.
+    validations:
+      required: true

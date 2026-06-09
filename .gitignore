@@ -1,3 +1,14 @@
 node_modules
 dist
 icons/
+
+# Generator SVG download cache
+.cache/
+
+# Parcel (example)
+.parcel-cache/
+example/package-lock.json
+
+# OS / editor
+.DS_Store
+*.log

@@ -1,18 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Person } from '@nine-thirty-five/material-symbols-react/rounded';
-import { Home } from '@nine-thirty-five/material-symbols-react/outlined';
-import { Folder } from '@nine-thirty-five/material-symbols-react/sharp';
+import App from './App';
+import './styles.css';
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-root.render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <div>
-      <Person height="4rem" width="4rem" fill="red" />
-      <Home height="4rem" width="4rem" fill="blue" />
-      <Folder height="4rem" width="4rem" fill="yellow" />
-    </div>
+    <App />
   </React.StrictMode>
 );

@@ -1,39 +1,58 @@
 name: Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - v*.*.*
   workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release with the built-in token
+      id-token: write # npm trusted publishing (OIDC) + provenance
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need tags for `git describe`
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
           registry-url: https://registry.npmjs.org/
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate
-        run: npm run generate
+      # Cache downloaded SVGs so recurring publishes only fetch changed icons.
+      # Keyed by the metadata snapshot; restore-keys reuse the prior cache and
+      # fetch just the delta when icons change.
+      - name: Cache icon SVGs
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: msr-svg-${{ hashFiles('_data/icons.json') }}
+          restore-keys: |
+            msr-svg-
 
+      # `build` runs `generate` (via prebuild) to fetch icons and emit dist.
       - name: Build
         run: npm run build
 
-      - name: Publish
-        run: npm publish --access public
+      # OIDC trusted publishing: npm exchanges the GitHub OIDC token for a
+      # short-lived credential and attaches provenance. No NPM_TOKEN needed.
+      - name: Publish to npm
+        run: npm publish --access public --provenance
 
+      # Create the GitHub Release with the built-in GITHUB_TOKEN (contents:write).
+      # No PAT needed — this is the last step, so it doesn't need to trigger anything.
+      - name: Create GitHub Release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(git describe --tags --abbrev=0)
+          gh release view "$tag" >/dev/null 2>&1 \
+            || gh release create "$tag" --generate-notes
