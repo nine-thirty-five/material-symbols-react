@@ -1,6 +1,6 @@
 {
   "name": "@nine-thirty-five/material-symbols-react",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Flexible, tree-shakeable React package for Google's Material Symbols — every style, weight and fill.",
   "type": "module",
   "module": "./dist/index.js",
