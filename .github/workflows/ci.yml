@@ -31,10 +31,20 @@ jobs:
       - name: Test
         run: npm test
 
+      # Cache downloaded SVGs (same key scheme as Publish) so the sample
+      # generate rarely hits the CDN.
+      - name: Cache icon SVGs
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: msr-svg-${{ hashFiles('_data/icons.json') }}
+          restore-keys: |
+            msr-svg-
+
       # Generate a small sample so the package can be linted without fetching
       # all ~3900 icons, then validate the published exports/types contract.
       - name: Generate sample
         run: npm run generate:sample
 
-      - name: Verify package (publint)
-        run: npx publint --strict
+      - name: Verify package (publint + attw)
+        run: npm run verify:package

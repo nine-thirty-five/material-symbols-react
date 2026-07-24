@@ -9,11 +9,20 @@ import { createElement, forwardRef } from 'react';
  * Wrapped in `forwardRef` so `<Icon ref={…} />` reaches the underlying `<svg>`
  * in both React 18 and 19.
  *
+ * Accessibility: icons are decorative by default (`aria-hidden="true"`).
+ * Passing `title`, `aria-label` or `aria-labelledby` makes the icon
+ * semantic instead: it gets `role="img"`, and `title` renders an SVG
+ * `<title>` as the accessible name.
+ *
  * @param {string} d - SVG path data.
  * @returns {import('./base').Icon}
  */
 const base = (d) =>
-  forwardRef(function Icon({ size = '1em', ...props }, ref) {
+  forwardRef(function Icon({ size = '1em', title, ...props }, ref) {
+    const labelled =
+      title != null ||
+      props['aria-label'] != null ||
+      props['aria-labelledby'] != null;
     return createElement(
       'svg',
       {
@@ -22,9 +31,12 @@ const base = (d) =>
         width: size,
         height: size,
         fill: 'currentColor',
+        'aria-hidden': labelled ? undefined : true,
+        role: labelled ? 'img' : undefined,
         ...props,
         ref,
       },
+      title ? createElement('title', null, title) : null,
       createElement('path', { d })
     );
   });

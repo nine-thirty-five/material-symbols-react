@@ -151,14 +151,10 @@ const CACHE_DIR = path.resolve('.cache/svg');
  * distinct so we never cache — or silently tolerate — a transient failure.
  */
 export type FetchResult =
-  | { status: 'ok'; text: string }
-  | { status: 'missing' }
-  | { status: 'error' };
+  { status: 'ok'; text: string } | { status: 'missing' } | { status: 'error' };
 
 export type SvgResult =
-  | { status: 'ok'; svg: string }
-  | { status: 'missing' }
-  | { status: 'error' };
+  { status: 'ok'; svg: string } | { status: 'missing' } | { status: 'error' };
 
 async function fetchTextWithRetry(
   url: string,
