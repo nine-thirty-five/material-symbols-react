@@ -2,14 +2,13 @@
 
 Use [Google's Material Symbols](https://fonts.google.com/icons?icon.set=Material+Symbols) in React — **every style, weight and fill**, fully tree-shakeable, zero runtime dependencies.
 
-<div align="center">
+Live example: [nine-thirty-five.github.io/material-symbols-react](https://nine-thirty-five.github.io/material-symbols-react)
+
 
 [![NPM version][npm-image]][npm-url]
 [![Downloads][download-image]][npm-downloads]
 ![npm-typescript]
 [![GitHub License](https://img.shields.io/badge/license-Apache--2.0-green)](./LICENSE)
-
-</div>
 
 - [Installation](#installation)
 - [Usage](#usage)
