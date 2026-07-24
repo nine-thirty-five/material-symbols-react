@@ -1,0 +1,74 @@
+name: Deploy Example
+
+# Build the interactive icon browser (example/) against a full generation and
+# publish it to GitHub Pages. Runs on every push to main, so the weekly
+# auto-update commit also refreshes the site.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Same key scheme as CI/Publish, so a warm cache makes the full
+      # generation take minutes instead of ~15.
+      - name: Cache icon SVGs
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: msr-svg-${{ hashFiles('_data/icons.json') }}
+          restore-keys: |
+            msr-svg-
+
+      - name: Build package (full icon set)
+        run: npm run build
+
+      - name: Install example dependencies
+        working-directory: example
+        run: npm ci
+
+      # Project Pages sites are served from /<repo>/, so assets need
+      # relative URLs.
+      - name: Build example
+        working-directory: example
+        run: npx parcel build src/index.html --public-url ./
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: example/dist
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write # deploy to GitHub Pages
+      id-token: write # verify the deployment origin
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
