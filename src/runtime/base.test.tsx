@@ -38,6 +38,35 @@ describe('base icon component', () => {
     expect(ref.current?.tagName.toLowerCase()).toBe('svg');
   });
 
+  it('is decorative by default (aria-hidden, no role)', () => {
+    const { container } = render(<Icon />);
+    const svg = container.querySelector('svg')!;
+    expect(svg.getAttribute('aria-hidden')).toBe('true');
+    expect(svg.hasAttribute('role')).toBe(false);
+  });
+
+  it('becomes semantic with aria-label: role="img", not aria-hidden', () => {
+    const { container } = render(<Icon aria-label="Add item" />);
+    const svg = container.querySelector('svg')!;
+    expect(svg.getAttribute('aria-label')).toBe('Add item');
+    expect(svg.getAttribute('role')).toBe('img');
+    expect(svg.hasAttribute('aria-hidden')).toBe(false);
+  });
+
+  it('renders a <title> as the accessible name when title is passed', () => {
+    const { container } = render(<Icon title="Add item" />);
+    const svg = container.querySelector('svg')!;
+    expect(svg.querySelector('title')?.textContent).toBe('Add item');
+    expect(svg.getAttribute('role')).toBe('img');
+    expect(svg.hasAttribute('aria-hidden')).toBe(false);
+  });
+
+  it('lets an explicit aria-hidden override the default', () => {
+    const { container } = render(<Icon aria-hidden={false} />);
+    const svg = container.querySelector('svg')!;
+    expect(svg.getAttribute('aria-hidden')).toBe('false');
+  });
+
   it('forwards arbitrary svg props, with explicit props overriding defaults', () => {
     const { container } = render(
       <Icon className="my-icon" data-testid="i" fill="red" width={48} />

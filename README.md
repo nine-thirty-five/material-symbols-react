@@ -96,6 +96,19 @@ Every icon accepts all SVG props (`SVGProps<SVGSVGElement>`), plus a convenience
 - **`size`** — `number | string`. Sets both `width` and `height`. Defaults to `"1em"`, so icons
   scale with the surrounding `font-size`. Pass `width`/`height` explicitly to override.
 - **Color** — icons render with `fill="currentColor"`, so they inherit `color` from CSS.
+- **`title`** — accessible label, rendered as an SVG `<title>` with `role="img"`.
+
+### Accessibility
+
+Icons are **decorative by default**: they render with `aria-hidden="true"` so screen readers skip
+them. To make an icon meaningful, give it a label — via `title`, `aria-label`, or
+`aria-labelledby` — and it switches to `role="img"` with the label as its accessible name:
+
+```tsx
+<Delete />                    {/* decorative: aria-hidden="true" */}
+<Delete title="Delete item" /> {/* semantic: role="img" + <title> */}
+<Delete aria-label="Delete item" />
+```
 
 ## Tree-shaking & bundle size
 
@@ -146,11 +159,29 @@ The catalog is also importable directly:
 import manifest from '@nine-thirty-five/material-symbols-react/manifest.json' with { type: 'json' };
 ```
 
+### Search from the command line
+
+The package ships a tiny dependency-free CLI over the same catalog:
+
+```bash
+npx @nine-thirty-five/material-symbols-react find trash
+```
+
+```text
+Delete            delete  [UI actions]
+DeleteForever     delete_forever  [UI actions]
+…
+
+import { Delete } from '@nine-thirty-five/material-symbols-react/outlined';
+```
+
+Options: `--limit/-n <N>` (default 10), `--json` for machine-readable output.
+
 ## ESM only
 
-This package ships **ES Modules only**. It works in all modern bundlers and ESM Node. If you need
-to consume it from a CommonJS module under `node16`/`nodenext` resolution, use a dynamic
-`import()`.
+This package ships **ES Modules only**. It works in all modern bundlers and ESM Node. On
+Node ≥ 22, CommonJS code can `require()` it directly thanks to `require(esm)`; on older Node or
+under `node16`/`nodenext` TypeScript resolution from CJS, use a dynamic `import()`.
 
 ## Migrating from v1
 

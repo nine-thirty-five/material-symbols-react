@@ -125,19 +125,21 @@ export function writeBarrel(
  * Build an explicit `exports` map for every generated entrypoint. Explicit
  * entries (vs a `./*` wildcard) resolve in every bundler — including Parcel and
  * older webpack/TypeScript resolution modes that don't implement subpath
- * patterns.
+ * patterns. The runtime condition is `default` (not `import`) so the package
+ * stays ESM-only while Node ≥22 consumers can still `require()` it via
+ * require(esm).
  */
 export function buildExports(
   styles: readonly string[],
   weights: readonly number[]
-): Record<string, { types: string; import: string }> {
-  const map: Record<string, { types: string; import: string }> = {
-    '.': { types: './dist/index.d.ts', import: './dist/index.js' },
+): Record<string, { types: string; default: string }> {
+  const map: Record<string, { types: string; default: string }> = {
+    '.': { types: './dist/index.d.ts', default: './dist/index.js' },
   };
   const add = (subpath: string, dir: string) => {
     map[subpath] = {
       types: `./dist/${dir}/index.d.ts`,
-      import: `./dist/${dir}/index.js`,
+      default: `./dist/${dir}/index.js`,
     };
   };
   for (const style of styles) {

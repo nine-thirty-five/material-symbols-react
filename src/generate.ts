@@ -70,13 +70,16 @@ async function main() {
 
   // Persist the metadata snapshot (change detection + example search). Sorted
   // by name and free of volatile fields (e.g. popularity) so `git diff` flags
-  // only real icon/category/tag changes — the signal the auto-update bot uses.
+  // only real changes — the signal the auto-update bot uses. `version` is
+  // included on purpose: Google bumps it when a glyph is redrawn without
+  // renaming, and a shape change must also trigger a release.
   fs.mkdirSync(DATA, { recursive: true });
   fs.writeFileSync(
     path.join(DATA, 'icons.json'),
     JSON.stringify(
-      allIcons.map(({ name, categories, tags, styles }) => ({
+      allIcons.map(({ name, version, categories, tags, styles }) => ({
         name,
+        version,
         categories,
         tags,
         styles,
@@ -216,6 +219,17 @@ async function main() {
         ...new Set(collisions),
       ].join(', ')}`
     );
+
+  // Transient fetch failures mean icons are absent from dist for no real
+  // reason. Publishing that would silently ship an incomplete package (the
+  // release pipeline is fully automated), so fail loudly instead.
+  if (errors.length) {
+    console.error(
+      `\n${errors.length} variant(s) failed to download after retries ` +
+        `(e.g. ${errors.slice(0, 5).join(', ')}). dist is incomplete — failing.`
+    );
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {
