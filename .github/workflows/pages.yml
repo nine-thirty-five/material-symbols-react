@@ -41,9 +41,12 @@ jobs:
       - name: Build package (full icon set)
         run: npm run build
 
+      # The example's npm lockfile is gitignored (it commits a pnpm lock), and
+      # it depends on the parent via `file:..` (built in the previous step), so
+      # `npm install` — not `npm ci` — is what resolves here.
       - name: Install example dependencies
         working-directory: example
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # Project Pages sites are served from /<repo>/, so assets need
       # relative URLs.
